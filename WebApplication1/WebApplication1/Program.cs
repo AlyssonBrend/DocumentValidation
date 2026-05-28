@@ -15,7 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<AppDbContext>(opt =>
     opt.UseMySql(
         builder.Configuration.GetConnectionString("Default"),
-        ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("Default"))
+        new MySqlServerVersion(new Version(8, 0, 0))
     ));
 
 // ── Validators ────────────────────────────────────────────────────────────────
@@ -76,11 +76,17 @@ builder.Services.AddCors(opt =>
 
 var app = builder.Build();
 
-// ── Migrate on startup ────────────────────────────────────────────────────────
-using (var scope = app.Services.CreateScope())
+// ── Migrate on startup (only when MySQL is reachable) ────────────────────────
+try
 {
+    using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
+}
+catch (Exception ex)
+{
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    logger.LogWarning("Could not apply migrations: {Message}. Start MySQL and restart the app.", ex.Message);
 }
 
 if (app.Environment.IsDevelopment())
