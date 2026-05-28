@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "frontend-preview",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-s", "WebApplication1/WebApplication1/wwwroot", "-p", "5173", "--no-clipboard"],
+      "port": 5173
+    }
+  ]
+}

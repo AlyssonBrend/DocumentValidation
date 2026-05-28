@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title data-i18n="appTitle">Document Validation</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+<!-- ── Navbar ──────────────────────────────────────────────────────────────── -->
+<nav class="navbar">
+  <span class="navbar-brand" data-i18n="appTitle">Document Validation</span>
+  <div class="navbar-nav">
+    <button class="nav-btn active" onclick="showPage('home'); setActiveNav(this)" data-i18n="navHome">Validator</button>
+    <button class="nav-btn" onclick="showPage('documents'); setActiveNav(this)" data-i18n="navDocuments">Documents</button>
+    <button class="nav-btn" onclick="showPage('clients'); setActiveNav(this)" data-i18n="navClients">Clients</button>
+    <button class="nav-btn" onclick="showPage('worker'); setActiveNav(this)" data-i18n="navWorkerArea">Worker Area</button>
+  </div>
+  <div class="navbar-controls">
+    <select id="langSelect" class="lang-select" aria-label="Language">
+      <option value="en">🇬🇧 EN</option>
+      <option value="pt">🇧🇷 PT</option>
+      <option value="es">🇪🇸 ES</option>
+      <option value="de">🇩🇪 DE</option>
+    </select>
+    <div id="authBadge" class="auth-badge hidden" title="Logged in"></div>
+  </div>
+</nav>
+
+<!-- ── Main ────────────────────────────────────────────────────────────────── -->
+<main>
+
+  <!-- Home / Validator page -->
+  <div id="page-home" class="page">
+    <div class="hero">
+      <h1 data-i18n="heroTitle">Document Validation System</h1>
+      <p data-i18n="heroSubtitle">Validate identity documents from multiple countries and formats.</p>
+    </div>
+
+    <div class="card">
+      <h2 data-i18n="cardValidatorTitle">Validate Document</h2>
+      <form id="validateForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="countrySelect" data-i18n="labelCountry">Country / Region</label>
+            <select id="countrySelect">
+              <!-- populated by JS -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="docTypeSelect" data-i18n="labelDocType">Document Type</label>
+            <select id="docTypeSelect">
+              <!-- populated by JS -->
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="docValue" data-i18n="labelDocValue">Document Value</label>
+          <textarea
+            id="docValue"
+            rows="3"
+            data-i18n-placeholder="placeholderDocValue"
+            placeholder="Enter the document number or MRZ..."
+          ></textarea>
+        </div>
+        <button type="submit" id="btnValidate" class="btn btn-primary mt-1" data-i18n="btnValidate">
+          Validate
+        </button>
+      </form>
+
+      <!-- Result -->
+      <div id="resultBox" class="result-box hidden">
+        <div class="result-header">
+          <span id="resultBadge" class="result-badge"></span>
+          <span id="resultScore" class="result-score"></span>
+        </div>
+        <div id="errorsSection" class="result-section hidden">
+          <h4 data-i18n="resultErrors">Errors</h4>
+          <ul id="resultErrors"></ul>
+        </div>
+        <div id="warningsSection" class="result-section hidden">
+          <h4 data-i18n="resultWarnings">Warnings</h4>
+          <ul id="resultWarnings"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Documents page -->
+  <div id="page-documents" class="page">
+    <h1 class="page-title" data-i18n="docListTitle">Validated Documents</h1>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th data-i18n="colType">Type</th>
+              <th data-i18n="colValue">Document</th>
+              <th data-i18n="colValid">Valid</th>
+              <th data-i18n="colScore">Score</th>
+              <th data-i18n="colCountry">Country</th>
+              <th data-i18n="colDate">Date</th>
+            </tr>
+          </thead>
+          <tbody id="docTableBody"></tbody>
+        </table>
+      </div>
+      <div class="text-center mt-1">
+        <button id="loadMoreDocs" class="btn btn-secondary hidden" data-i18n="loadMore">Load more</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Clients page -->
+  <div id="page-clients" class="page">
+    <h1 class="page-title" data-i18n="clientListTitle">Clients</h1>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th data-i18n="colName">Name</th>
+              <th data-i18n="colEmail">Email</th>
+              <th data-i18n="colType">Doc Type</th>
+              <th data-i18n="colCountry">Country</th>
+              <th data-i18n="colDate">Date</th>
+            </tr>
+          </thead>
+          <tbody id="clientTableBody"></tbody>
+        </table>
+      </div>
+      <div class="text-center mt-1">
+        <button id="loadMoreClients" class="btn btn-secondary hidden" data-i18n="loadMore">Load more</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Worker area page -->
+  <div id="page-worker" class="page">
+    <div id="workerArea"></div>
+  </div>
+
+</main>
+
+<footer>
+  &copy; <span id="year"></span> Document Validation System
+</footer>
+
+<script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+<script src="/js/translations.js"></script>
+<script src="/js/app.js"></script>
+<script>
+  function setActiveNav(btn) {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+</script>
+</body>
+</html>
