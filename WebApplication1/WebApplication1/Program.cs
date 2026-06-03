@@ -32,6 +32,9 @@ builder.Services.AddScoped<AuthService>();
 var jwtKey = builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException("Jwt:Key is not configured.");
 
+if (jwtKey.Length < 32 || jwtKey == "CHANGE_THIS_TO_A_LONG_SECRET_KEY_AT_LEAST_32_CHARS")
+    throw new InvalidOperationException("Jwt:Key must be a random secret of at least 32 characters. Update appsettings or use a user secret.");
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(opt =>
     {
@@ -70,9 +73,12 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+    ?? ["http://localhost:5173", "http://localhost:5000", "https://localhost:7000"];
+
 builder.Services.AddCors(opt =>
     opt.AddDefaultPolicy(policy =>
-        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
+        policy.WithOrigins(allowedOrigins).AllowAnyMethod().AllowAnyHeader()));
 
 var app = builder.Build();
 

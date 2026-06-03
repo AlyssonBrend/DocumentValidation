@@ -33,6 +33,70 @@ function setLang(lang) {
   applyTranslations();
 }
 
+// ── Document input config ─────────────────────────────────────────────────────
+const docConfig = {
+  CPF:        { mask: '###.###.###-##', numeric: true,  icon: '🪪', hint: 'CPF: 000.000.000-00',         maxRaw: 11,  isMrz: false },
+  CNH:        { mask: '###########',    numeric: true,  icon: '🚗', hint: 'CNH: 11 dígitos numéricos',    maxRaw: 11,  isMrz: false },
+  Passport:   { mask: null,             numeric: false, icon: '📘', hint: 'MRZ — 2 linhas de 44 chars',  maxRaw: 90,  isMrz: true  },
+  EuropeanId: { mask: null,             numeric: false, icon: '🪪', hint: 'Número alfanumérico do documento', maxRaw: 30, isMrz: false },
+};
+
+function applyMask(raw, mask) {
+  let out = '';
+  let ri = 0;
+  for (let i = 0; i < mask.length && ri < raw.length; i++) {
+    out += mask[i] === '#' ? raw[ri++] : mask[i];
+  }
+  return out;
+}
+
+function onDocValueInput(e) {
+  const type = document.getElementById('docTypeSelect').value;
+  const cfg = docConfig[type];
+  if (!cfg?.mask) return;
+
+  const cursor = e.target.selectionStart;
+  const rawBefore = e.target.value.slice(0, cursor).replace(/\D/g, '').length;
+  const raw = e.target.value.replace(/\D/g, '').slice(0, cfg.maxRaw);
+  const masked = applyMask(raw, cfg.mask);
+  e.target.value = masked;
+
+  // Restore cursor: advance past mask separators
+  let pos = 0, count = 0;
+  while (pos < masked.length && count < rawBefore) {
+    if (cfg.mask[pos] === '#') count++;
+    pos++;
+  }
+  e.target.setSelectionRange(pos, pos);
+}
+
+function updateDocInput() {
+  const type = document.getElementById('docTypeSelect').value;
+  const cfg = docConfig[type] ?? { numeric: false, icon: '📄', hint: '', isMrz: false, maxRaw: 200 };
+
+  const inputEl  = document.getElementById('docValue');
+  const mrzEl    = document.getElementById('docValueMrz');
+  const iconEl   = document.getElementById('docInputIcon');
+  const hintEl   = document.getElementById('docInputHint');
+
+  iconEl.textContent = cfg.icon;
+  hintEl.textContent = cfg.hint;
+
+  if (cfg.isMrz) {
+    inputEl.classList.add('hidden');
+    mrzEl.classList.remove('hidden');
+    mrzEl.value = '';
+  } else {
+    mrzEl.classList.add('hidden');
+    inputEl.classList.remove('hidden');
+    inputEl.value = '';
+    inputEl.inputMode = cfg.numeric ? 'numeric' : 'text';
+    inputEl.placeholder = cfg.mask ? cfg.mask.replace(/#/g, '0') : cfg.hint;
+    inputEl.setAttribute('data-mask', cfg.mask || '');
+    inputEl.setAttribute('data-numeric', cfg.numeric ? '1' : '');
+  }
+}
+
 // ── Country / DocType selects ─────────────────────────────────────────────────
 const countryDocTypes = {
   BR:   ['CPF', 'CNH', 'Passport'],
@@ -71,6 +135,7 @@ function buildDocTypeSelect() {
     opt.textContent = allTypes[type] ?? type;
     sel.appendChild(opt);
   }
+  updateDocInput();
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
@@ -88,8 +153,14 @@ function showPage(pageId) {
 document.getElementById('validateForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const country = document.getElementById('countrySelect').value;
-  const type = document.getElementById('docTypeSelect').value;
-  const value = document.getElementById('docValue').value.trim();
+  const type    = document.getElementById('docTypeSelect').value;
+  const cfg     = docConfig[type];
+
+  const rawEl = cfg?.isMrz ? document.getElementById('docValueMrz') : document.getElementById('docValue');
+  let value   = rawEl.value.trim();
+
+  // Strip mask separators for numeric documents before sending to API
+  if (cfg?.numeric) value = value.replace(/\D/g, '');
 
   if (!value) return;
 
@@ -254,13 +325,28 @@ async function loadDocuments(reset = true) {
 
     for (const doc of data.items) {
       const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${doc.documentType}</td>
-        <td class="doc-value">${doc.documentValue}</td>
-        <td><span class="badge ${doc.isValid ? 'badge-valid' : 'badge-invalid'}">${doc.isValid ? '✓' : '✗'}</span></td>
-        <td>${doc.confidenceScore}%</td>
-        <td>${doc.country || '-'}</td>
-        <td>${new Date(doc.validatedAt).toLocaleString()}</td>`;
+      const cells = [
+        doc.documentType,
+        doc.documentValue,
+        null, // badge cell handled below
+        `${doc.confidenceScore}%`,
+        doc.country || '-',
+        new Date(doc.validatedAt).toLocaleString()
+      ];
+      cells.forEach((text, i) => {
+        const td = document.createElement('td');
+        if (i === 2) {
+          const span = document.createElement('span');
+          span.className = `badge ${doc.isValid ? 'badge-valid' : 'badge-invalid'}`;
+          span.textContent = doc.isValid ? '✓' : '✗';
+          if (i === 1) td.className = 'doc-value';
+          td.appendChild(span);
+        } else {
+          if (i === 1) td.className = 'doc-value';
+          td.textContent = text;
+        }
+        tr.appendChild(td);
+      });
       tbody.appendChild(tr);
     }
 
@@ -300,12 +386,11 @@ async function loadClients(reset = true) {
 
     for (const c of data.items) {
       const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${c.name}</td>
-        <td>${c.email}</td>
-        <td>${c.documentType}</td>
-        <td>${c.country || '-'}</td>
-        <td>${new Date(c.createdAt).toLocaleString()}</td>`;
+      [c.name, c.email, c.documentType, c.country || '-', new Date(c.createdAt).toLocaleString()].forEach(text => {
+        const td = document.createElement('td');
+        td.textContent = text;
+        tr.appendChild(td);
+      });
       tbody.appendChild(tr);
     }
 
@@ -325,6 +410,8 @@ document.getElementById('loadMoreClients').addEventListener('click', () => {
 document.getElementById('langSelect').value = state.lang;
 document.getElementById('langSelect').addEventListener('change', e => setLang(e.target.value));
 document.getElementById('countrySelect').addEventListener('change', buildDocTypeSelect);
+document.getElementById('docTypeSelect').addEventListener('change', updateDocInput);
+document.getElementById('docValue').addEventListener('input', onDocValueInput);
 
 applyTranslations();
 showPage('home');

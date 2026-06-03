@@ -1,0 +1,15 @@
+Compilando...
+fail: Microsoft.EntityFrameworkCore.Database.Connection[20004]
+      An error occurred using the connection to database '' on server 'localhost'.
+warn: Program[0]
+      Could not apply migrations: An exception has been raised that is likely due to a transient failure. Consider enabling transient error resiliency by adding 'EnableRetryOnFailure()' to the 'UseMySql' call.. Start MySQL and restart the app.
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5050
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: C:\Users\alyss\OneDrive\Desktop\Projetos\DocumentValidation\WebApplication1\WebApplication1
+warn: Microsoft.AspNetCore.HttpsPolicy.HttpsRedirectionMiddleware[3]
+      Failed to determine the https port for redirect.

@@ -57,12 +57,27 @@
         </div>
         <div class="form-group">
           <label for="docValue" data-i18n="labelDocValue">Document Value</label>
-          <textarea
-            id="docValue"
-            rows="3"
-            data-i18n-placeholder="placeholderDocValue"
-            placeholder="Enter the document number or MRZ..."
-          ></textarea>
+          <div class="doc-input-wrapper" id="docInputWrapper">
+            <span class="doc-input-icon" id="docInputIcon">🪪</span>
+            <div class="doc-input-field">
+              <input
+                type="text"
+                id="docValue"
+                class="doc-input"
+                autocomplete="off"
+                spellcheck="false"
+                placeholder="000.000.000-00"
+              />
+              <textarea
+                id="docValueMrz"
+                class="doc-textarea hidden"
+                rows="3"
+                spellcheck="false"
+                placeholder="PBRXXXXXXXXXXXXX&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&#10;1234567890BRA..."
+              ></textarea>
+            </div>
+          </div>
+          <div class="doc-input-hint" id="docInputHint"></div>
         </div>
         <button type="submit" id="btnValidate" class="btn btn-primary mt-1" data-i18n="btnValidate">
           Validate

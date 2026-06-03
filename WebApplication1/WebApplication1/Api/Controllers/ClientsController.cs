@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using DocumentValidator.Domain.Entities;
 using DocumentValidator.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
@@ -18,6 +19,9 @@ public class ClientsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+
         var total = await _db.Clients.CountAsync();
         var items = await _db.Clients.AsNoTracking()
             .OrderByDescending(c => c.CreatedAt)
@@ -82,9 +86,23 @@ public class ClientsController : ControllerBase
 
 public class CreateClientRequest
 {
+    [Required]
+    [StringLength(255, MinimumLength = 2)]
     public string Name { get; set; } = string.Empty;
+
+    [Required]
+    [EmailAddress]
+    [StringLength(255)]
     public string Email { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(50)]
     public string DocumentType { get; set; } = string.Empty;
+
+    [Required]
+    [StringLength(100)]
     public string DocumentValue { get; set; } = string.Empty;
+
+    [StringLength(100)]
     public string Country { get; set; } = string.Empty;
 }

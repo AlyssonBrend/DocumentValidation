@@ -1,10 +1,11 @@
+using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 using DocumentValidator.Application.Services;
 using DocumentValidator.Domain.Entities;
 using DocumentValidator.Domain.Enums;
 using DocumentValidator.Infrastructure.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace DocumentValidator.Api.Controllers;
 
@@ -22,6 +23,7 @@ public class ValidationController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize]
     public async Task<IActionResult> Validate([FromBody] ValidateRequest request)
     {
         var result = _service.Validate(request.Type, request.Value);
@@ -50,7 +52,13 @@ public class ValidationController : ControllerBase
 
 public class ValidateRequest
 {
+    [Required]
     public DocumentType Type { get; set; }
+
+    [Required]
+    [StringLength(200, MinimumLength = 1)]
     public string Value { get; set; } = string.Empty;
+
+    [StringLength(100)]
     public string? Country { get; set; }
 }

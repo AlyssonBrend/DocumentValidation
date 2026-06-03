@@ -11,6 +11,10 @@ namespace DocumentValidator.Application.Services;
 
 public class AuthService
 {
+    private const int Pbkdf2Iterations = 600_000;
+    private const int SaltSize = 16;
+    private const int HashSize = 32;
+
     private readonly AppDbContext _db;
     private readonly IConfiguration _config;
 
@@ -25,12 +29,11 @@ public class AuthService
         var employee = await _db.Employees
             .FirstOrDefaultAsync(e => e.EmployeeCode == employeeCode);
 
-        if (employee is null) return null;
+        // Verify even when employee is null to prevent timing-based user enumeration
+        var isValid = employee is not null && VerifyPassword(password, employee.PasswordHash);
+        if (!isValid) return null;
 
-        var hash = HashPassword(password);
-        if (employee.PasswordHash != hash) return null;
-
-        return GenerateToken(employee);
+        return GenerateToken(employee!);
     }
 
     public async Task<Employee> RegisterAsync(string name, string email, string employeeCode, string password, string department, string role = "Analyst")
@@ -50,10 +53,34 @@ public class AuthService
         return employee;
     }
 
+    // Format: base64(salt):base64(hash)
     public static string HashPassword(string password)
     {
-        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(password));
-        return Convert.ToHexString(bytes);
+        var salt = RandomNumberGenerator.GetBytes(SaltSize);
+        var hash = Rfc2898DeriveBytes.Pbkdf2(
+            Encoding.UTF8.GetBytes(password),
+            salt,
+            Pbkdf2Iterations,
+            HashAlgorithmName.SHA256,
+            HashSize);
+        return $"{Convert.ToBase64String(salt)}:{Convert.ToBase64String(hash)}";
+    }
+
+    public static bool VerifyPassword(string password, string storedHash)
+    {
+        var parts = storedHash.Split(':');
+        if (parts.Length != 2) return false;
+
+        var salt = Convert.FromBase64String(parts[0]);
+        var expected = Convert.FromBase64String(parts[1]);
+        var actual = Rfc2898DeriveBytes.Pbkdf2(
+            Encoding.UTF8.GetBytes(password),
+            salt,
+            Pbkdf2Iterations,
+            HashAlgorithmName.SHA256,
+            HashSize);
+
+        return CryptographicOperations.FixedTimeEquals(actual, expected);
     }
 
     private string GenerateToken(Employee employee)
