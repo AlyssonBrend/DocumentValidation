@@ -1,5 +1,6 @@
 using DocumentValidator.Application.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace DocumentValidator.Api.Controllers;
 
@@ -15,6 +16,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
+    [EnableRateLimiting("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest req)
     {
         var token = await _auth.LoginAsync(req.EmployeeCode, req.Password);
@@ -25,11 +27,21 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest req)
     {
+        var allowedRoles = new[] { "Admin", "Analyst", "Viewer" };
+        var role = req.Role ?? "Analyst";
+        if (!allowedRoles.Contains(role))
+            return BadRequest(new { message = $"Role inválida. Permitidas: {string.Join(", ", allowedRoles)}." });
+
+        if (req.Password.Length < 8 ||
+            !req.Password.Any(char.IsUpper) ||
+            !req.Password.Any(char.IsDigit))
+            return BadRequest(new { message = "Senha deve ter no mínimo 8 caracteres, uma letra maiúscula e um número." });
+
         try
         {
             var employee = await _auth.RegisterAsync(
                 req.Name, req.Email, req.EmployeeCode,
-                req.Password, req.Department, req.Role ?? "Analyst");
+                req.Password, req.Department, role);
 
             return Ok(new { employee.Id, employee.Name, employee.EmployeeCode });
         }

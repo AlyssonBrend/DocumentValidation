@@ -16,14 +16,19 @@ public class EmployeesController : ControllerBase
 
     [HttpGet]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
+        pageSize = Math.Clamp(pageSize, 1, 100);
+        var total = await _db.Employees.CountAsync();
         var employees = await _db.Employees
             .AsNoTracking()
+            .OrderBy(e => e.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(e => new { e.Id, e.Name, e.Email, e.EmployeeCode, e.Department, e.Role, e.CreatedAt })
             .ToListAsync();
 
-        return Ok(employees);
+        return Ok(new { total, page, pageSize, data = employees });
     }
 
     [HttpGet("{id:int}")]
